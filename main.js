@@ -1,36 +1,59 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+// Import necessary libraries and functions
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.module.js';
 import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/GLTFLoader.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const mindarThree = new MindARThree({
+// Function to initialize MindARThree instance
+const initializeMindAR = () => {
+  return new MindARThree({
     container: document.body,
-    imageTargetSrc: './assets/targets/course-banner.mind', // Ubah ke file target-mu
+    imageTargetSrc: './assets/targets/course-banner.mind',
   });
+};
 
-  const { renderer, scene, camera } = mindarThree;
-
-  // Tambahkan pencahayaan
+// Function to set up lighting for the scene
+const setupLighting = (scene) => {
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
   scene.add(light);
+};
 
-  // Muat model GLTF
-  const loader = new GLTFLoader();
-  loader.load('./assets/models/RobotExpressive.glb', (gltf) => {
-    const model = gltf.scene;
-    model.scale.set(0.5, 0.5, 0.5);
-    model.position.set(0, -0.4, 0);
+// Function to load and configure a 3D model
+const loadGLTFModel = async (url, scale, position) => {
+  const loader = new THREE.GLTFLoader();
+  const model = await loader.loadAsync(url);
+  model.scene.scale.set(scale.x, scale.y, scale.z);
+  model.scene.position.set(position.x, position.y, position.z);
+  return model.scene;
+};
 
-    // Tambahkan model ke anchor
-    const anchor = mindarThree.addAnchor(0);
-    anchor.group.add(model);
-  });
+// Function to set up anchors
+const setupAnchor = (mindarThree, anchorIndex, model) => {
+  const anchor = mindarThree.addAnchor(anchorIndex);
+  anchor.group.add(model);
+};
 
-  // Mulai MindAR
-  await mindarThree.start();
-
-  // Animasi loop
+// Function to start rendering loop
+const startRenderingLoop = (renderer, scene, camera) => {
+  const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
+    const delta = clock.getDelta();
     renderer.render(scene, camera);
   });
+};
+
+// Main function to start the AR experience
+document.addEventListener('DOMContentLoaded', async () => {
+  const mindarThree = initializeMindAR();
+  const { renderer, scene, camera } = mindarThree;
+
+  setupLighting(scene);
+
+  // Load models
+  const model1 = await loadGLTFModel('./assets/models/RobotExpressive.glb', { x: 0.5, y: 0.5, z: 0.5 }, { x: 0, y: -0.4, z: 0 });
+
+  // Set up anchors
+  setupAnchor(mindarThree, 0, model1);
+
+  // Start MindAR and rendering loop
+  await mindarThree.start();
+  startRenderingLoop(renderer, scene, camera);
 });

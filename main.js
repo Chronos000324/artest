@@ -1,7 +1,7 @@
 // Import necessary libraries and functions
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.module.js';
 import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js';
-
+import { loadGLTF } from './libs/loader.js';
 // Function to initialize MindARThree instance
 const initializeMindAR = () => {
   return new MindARThree({

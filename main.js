@@ -1,13 +1,13 @@
-// Import necessary libraries and functions
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.module.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.132.2/examples/jsm/loaders/GLTFLoader.js';
-import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js';
+// Import necessary functions and libraries
+import * as THREE from 'libs/three.js-r132/build/three.module.js';
+import { MindARThree } from 'libs/mindar/mindar.image.three.prod.js';
+import { loadGLTF } from 'libs/loader.js';
 
 // Function to initialize MindARThree instance
 const initializeMindAR = () => {
   return new MindARThree({
     container: document.body,
-    imageTargetSrc: '/assets/targets/course-banner.mind',
+    imageTargetSrc: 'assets/targets/course-banner.mind', // Path to your AR marker file
   });
 };
 
@@ -18,55 +18,65 @@ const setupLighting = (scene) => {
 };
 
 // Function to load and configure a 3D model
-const loadGLTFModel = async (url, scale, position) => {
-  const loader = new GLTFLoader();
-  return new Promise((resolve, reject) => {
-    loader.load(
-      url,
-      (gltf) => {
-        gltf.scene.scale.set(scale.x, scale.y, scale.z);
-        gltf.scene.position.set(position.x, position.y, position.z);
-        resolve(gltf.scene);
-      },
-      undefined,
-      (error) => {
-        reject(error);
-      }
-    );
-  });
+const loadAndConfigureModel = async (path, scale, position) => {
+  const model = await loadGLTF(path);
+  model.scene.scale.set(scale.x, scale.y, scale.z);
+  model.scene.position.set(position.x, position.y, position.z);
+
+  // If the model has animations, set up an animation mixer
+  if (model.animations && model.animations.length > 0) {
+    const mixer = new THREE.AnimationMixer(model.scene);
+    const action = mixer.clipAction(model.animations[0]);
+    action.play();
+    model.mixer = mixer;
+  }
+
+  return model;
 };
 
-// Function to set up anchors
+// Function to set up the anchor with the model
 const setupAnchor = (mindarThree, anchorIndex, model) => {
   const anchor = mindarThree.addAnchor(anchorIndex);
-  anchor.group.add(model);
+  anchor.group.add(model.scene);
 };
 
 // Function to start rendering loop
-const startRenderingLoop = (renderer, scene, camera) => {
+const startRenderingLoop = (renderer, scene, camera, models) => {
+  const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
+    const delta = clock.getDelta();
+    models.forEach((model) => {
+      if (model.mixer) {
+        model.mixer.update(delta);
+      }
+    });
     renderer.render(scene, camera);
   });
 };
 
 // Main function to start the AR experience
-document.addEventListener('DOMContentLoaded', async () => {
-  const mindarThree = initializeMindAR();
-  const { renderer, scene, camera } = mindarThree;
+document.addEventListener('DOMContentLoaded', () => {
+  const start = async () => {
+    const mindarThree = initializeMindAR();
+    const { renderer, scene, camera } = mindarThree;
 
-  setupLighting(scene);
+    // Add lighting
+    setupLighting(scene);
 
-  try {
-    // Load models
-    const model1 = await loadGLTFModel('/assets/models/RobotExpressive.glb', { x: 0.5, y: 0.5, z: 0.5 }, { x: 0, y: -0.4, z: 0 });
+    // Load 3D models and configure them
+    const robotModel = await loadAndConfigureModel(
+      'assets/models/RobotExpressive.glb', // Path to the 3D model file
+      { x: 0.5, y: 0.5, z: 0.5 },           // Scale
+      { x: 0, y: -0.4, z: 0 }              // Position
+    );
 
-    // Set up anchors
-    setupAnchor(mindarThree, 0, model1);
+    // Set up an anchor for the robot model
+    setupAnchor(mindarThree, 0, robotModel);
 
-    // Start MindAR and rendering loop
+    // Start the AR session and rendering loop
     await mindarThree.start();
-    startRenderingLoop(renderer, scene, camera);
-  } catch (error) {
-    console.error("Error loading model:", error);
-  }
+    startRenderingLoop(renderer, scene, camera, [robotModel]);
+  };
+
+  start();
 });

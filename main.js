@@ -1,82 +1,36 @@
-// Import necessary functions and libraries
-import * as THREE from './libs/three.js-r132/build/three.module.js';
-import { MindARThree } from './libs/mindar/mindar-image-three.prod.js';
-import { loadGLTF } from './libs/loader.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/GLTFLoader.js';
 
-// Function to initialize MindARThree instance
-const initializeMindAR = () => {
-  return new MindARThree({
+document.addEventListener('DOMContentLoaded', async () => {
+  const mindarThree = new MindARThree({
     container: document.body,
-    imageTargetSrc: './assets/targets/course-banner.mind', // Path to your AR marker file
+    imageTargetSrc: './assets/targets/course-banner.mind', // Ubah ke file target-mu
   });
-};
 
-// Function to set up lighting for the scene
-const setupLighting = (scene) => {
+  const { renderer, scene, camera } = mindarThree;
+
+  // Tambahkan pencahayaan
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
   scene.add(light);
-};
 
-// Function to load and configure a 3D model
-const loadAndConfigureModel = async (path, scale, position) => {
-  const model = await loadGLTF(path);
-  model.scene.scale.set(scale.x, scale.y, scale.z);
-  model.scene.position.set(position.x, position.y, position.z);
+  // Muat model GLTF
+  const loader = new GLTFLoader();
+  loader.load('./assets/models/RobotExpressive.glb', (gltf) => {
+    const model = gltf.scene;
+    model.scale.set(0.5, 0.5, 0.5);
+    model.position.set(0, -0.4, 0);
 
-  // If the model has animations, set up an animation mixer
-  if (model.animations && model.animations.length > 0) {
-    const mixer = new THREE.AnimationMixer(model.scene);
-    const action = mixer.clipAction(model.animations[0]);
-    action.play();
-    model.mixer = mixer;
-  }
+    // Tambahkan model ke anchor
+    const anchor = mindarThree.addAnchor(0);
+    anchor.group.add(model);
+  });
 
-  return model;
-};
+  // Mulai MindAR
+  await mindarThree.start();
 
-// Function to set up the anchor with the model
-const setupAnchor = (mindarThree, anchorIndex, model) => {
-  const anchor = mindarThree.addAnchor(anchorIndex);
-  anchor.group.add(model.scene);
-};
-
-// Function to start rendering loop
-const startRenderingLoop = (renderer, scene, camera, models) => {
-  const clock = new THREE.Clock();
+  // Animasi loop
   renderer.setAnimationLoop(() => {
-    const delta = clock.getDelta();
-    models.forEach((model) => {
-      if (model.mixer) {
-        model.mixer.update(delta);
-      }
-    });
     renderer.render(scene, camera);
   });
-};
-
-// Main function to start the AR experience
-document.addEventListener('DOMContentLoaded', () => {
-  const start = async () => {
-    const mindarThree = initializeMindAR();
-    const { renderer, scene, camera } = mindarThree;
-
-    // Add lighting
-    setupLighting(scene);
-
-    // Load 3D models and configure them
-    const robotModel = await loadAndConfigureModel(
-      './assets/models/RobotExpressive.glb', // Path to the 3D model file
-      { x: 0.5, y: 0.5, z: 0.5 },           // Scale
-      { x: 0, y: -0.4, z: 0 }              // Position
-    );
-
-    // Set up an anchor for the robot model
-    setupAnchor(mindarThree, 0, robotModel);
-
-    // Start the AR session and rendering loop
-    await mindarThree.start();
-    startRenderingLoop(renderer, scene, camera, [robotModel]);
-  };
-
-  start();
 });

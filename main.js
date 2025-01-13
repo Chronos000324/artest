@@ -1,13 +1,13 @@
 // Import necessary functions and libraries
-import * as THREE from 'libs/three.js-r132/build/three.module.js';
-import { MindARThree } from 'libs/mindar/mindar.image.three.prod.js';
-import { loadGLTF } from 'libs/loader.js';
+import * as THREE from './libs/three.js-r132/build/three.module.js';
+import { MindARThree } from './libs/mindar/mindar-image-three.prod.js';
+import { loadGLTF } from './libs/loader.js'; // Pastikan anda mempunyai fail loader.js di lokasi ini
 
 // Function to initialize MindARThree instance
 const initializeMindAR = () => {
   return new MindARThree({
     container: document.body,
-    imageTargetSrc: 'assets/targets/course-banner.mind', // Path to your AR marker file
+    imageTargetSrc: './assets/targets/course-banner.mind', // Path to your AR marker file
   });
 };
 
@@ -57,6 +57,7 @@ const startRenderingLoop = (renderer, scene, camera, models) => {
 // Main function to start the AR experience
 document.addEventListener('DOMContentLoaded', () => {
   const start = async () => {
+    // Initialize MindAR
     const mindarThree = initializeMindAR();
     const { renderer, scene, camera } = mindarThree;
 
@@ -65,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load 3D models and configure them
     const robotModel = await loadAndConfigureModel(
-      'assets/models/RobotExpressive.glb', // Path to the 3D model file
+      './assets/models/RobotExpressive.glb', // Path to the 3D model file
       { x: 0.5, y: 0.5, z: 0.5 },           // Scale
       { x: 0, y: -0.4, z: 0 }              // Position
     );

@@ -7,7 +7,7 @@ import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/min
 const initializeMindAR = () => {
   return new MindARThree({
     container: document.body,
-    imageTargetSrc: './assets/targets/course-banner.mind',
+    imageTargetSrc: '/assets/targets/course-banner.mind',
   });
 };
 
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     // Load models
-    const model1 = await loadGLTFModel('./assets/models/RobotExpressive.glb', { x: 0.5, y: 0.5, z: 0.5 }, { x: 0, y: -0.4, z: 0 });
+    const model1 = await loadGLTFModel('/assets/models/RobotExpressive.glb', { x: 0.5, y: 0.5, z: 0.5 }, { x: 0, y: -0.4, z: 0 });
 
     // Set up anchors
     setupAnchor(mindarThree, 0, model1);
